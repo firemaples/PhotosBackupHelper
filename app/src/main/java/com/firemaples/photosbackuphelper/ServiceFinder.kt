@@ -21,22 +21,28 @@ class ServiceFinder(
     var listener: ((NsdServiceInfo) -> Unit)? = null
     private var mServiceName: String? = null
     private var serviceInfo: NsdServiceInfo? = null
+    private var started = false
 
     companion object {
 
         /**
          * https://kodi.wiki/view/Avahi_Zeroconf
          */
-        fun createCIFSFinder(context: Context): ServiceFinder =
-            ServiceFinder(context, "CIFSFinder", "_smb._tcp.", 139)
+        fun createSMBFinder(context: Context, port: Int): ServiceFinder =
+            ServiceFinder(context, "CIFSFinder", "_smb._tcp.", port)
+
+        fun createTestFinder(context: Context, port: Int): ServiceFinder =
+            ServiceFinder(context, "TestFinder", "_cifs._udp.", port)
     }
 
-    fun start() {
+    fun start() = synchronized(this) {
+        started = true
         registerService()
         discoverService()
     }
 
-    fun stop() {
+    fun stop() = synchronized(this) {
+        started = false
         nsdManager.apply {
             unregisterService(registrationListener)
             stopServiceDiscovery(discoveryListener)
